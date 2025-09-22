@@ -67,12 +67,12 @@ class OrderExecutor:
             "px": ball.target_price,
             "is_market": False,
         }
+        oid = "0"
         try:
             resp = await self.async_hyper.place_order(**payload)
             oid = parse_order_info(resp)
         except Exception as e:
             print(f"Order placement failed: {e}")
-            return "0"
 
         ball.order_id = oid
 

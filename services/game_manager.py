@@ -144,17 +144,20 @@ class GameManager:
 
     async def _monitor_order_fills(self) -> Optional[str]:
         """Monitor order fills via Hyperliquid WebSocket"""
-        # TODO: Integrate with Hyperliquid WebSocket
-        # For now, simulate a random winner after 1-5 seconds
-        await asyncio.sleep(random.uniform(1, 5))
-
-        if self.current_game and self.current_game.balls:
-            # Simulate random winner selection
-            import random
-
-            winner_ball = random.choice(self.current_game.balls)
-            return winner_ball.ball_name
-
+        if not self.current_game.placed_orders:
+            return None
+        
+        # 使用真实的订单监控
+        filled_order_id = await self.order_executor.monitor_order_fills(
+            self.current_game.placed_orders
+        )
+        
+        if filled_order_id:
+            # 根据订单ID找到对应的球
+            for ball in self.current_game.balls:
+                if ball.order_id == filled_order_id:
+                    return ball.ball_name
+        
         return None
 
     def get_game_status(self, participant_uuid: str) -> Optional[Dict]:
