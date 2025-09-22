@@ -17,7 +17,7 @@ def demo_debug():
     # Reset game first
     print("🔄 Resetting game state...")
     try:
-        response = requests.post(f"{BASE_URL}/game/reset")
+        response = requests.get(f"{BASE_URL}/reset")
         if response.status_code == 200:
             print("✅ Game reset successfully")
         else:

@@ -16,7 +16,7 @@ def test_pricing_logic():
     # Reset game
     print("🔄 Resetting game...")
     try:
-        response = requests.post(f"{BASE_URL}/game/reset")
+        response = requests.get(f"{BASE_URL}/reset")
         if response.status_code == 200:
             print("✅ Game reset successfully")
         else:

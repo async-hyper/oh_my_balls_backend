@@ -36,7 +36,7 @@ class InteractiveGameDebugger:
         print("🔄 Clearing all data and resetting game state...")
         
         try:
-            response = requests.post(f"{BASE_URL}/game/reset")
+            response = requests.get(f"{BASE_URL}/reset")
             if response.status_code == 200:
                 print("✅ Game reset successfully")
                 self.participants = []

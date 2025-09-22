@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import router as api_router
 
 app = FastAPI(
-    title="BTC Price Prediction Game API",
+    title="Oh My Balls API",
     description="A BTC price prediction game for hackathon demonstration",
     version="1.0.0"
 )
@@ -24,12 +24,14 @@ app.include_router(api_router, prefix="/api/v1")
 async def root():
     """Root endpoint - API information"""
     return {
-        "message": "Welcome to BTC Price Prediction Game API",
+        "message": "Welcome to Oh My Balls API",
         "version": "1.0.0",
         "endpoints": {
             "join": "POST /api/v1/join",
             "status": "GET /api/v1/status",
-            "game_info": "GET /api/v1/game/info"
+            "game_info": "GET /api/v1/game/info",
+            "start": "GET /api/v1/start",
+            "game_reset": "GET /api/v1/reset"
         }
     }
 
