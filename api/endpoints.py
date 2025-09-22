@@ -47,15 +47,15 @@ async def join_game(request: JoinRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/status", response_model=StatusResponse)
-async def get_game_status(uuid: str):
+async def get_game_status():
     """
     Get current game status and real-time information
     """
     try:
-        status_data = game_manager.get_game_status(uuid)
+        status_data = game_manager.get_game_status()
         
         if status_data is None:
-            raise HTTPException(status_code=404, detail="Participant not found")
+            raise HTTPException(status_code=404, detail="No active game")
         
         return StatusResponse(**status_data)
     

@@ -57,12 +57,8 @@ This document outlines the API design for a BTC price prediction game designed t
 **Method**: `GET`  
 **Description**: Get current game status and real-time information
 
-#### Request Body
-```json
-{
-  "uuid": "string"
-}
-```
+#### Request Parameters
+None - This endpoint is publicly accessible
 
 #### Response
 ```json
@@ -89,8 +85,8 @@ This document outlines the API design for a BTC price prediction game designed t
 - Status 0: Game preparation, waiting for 20 participants
 - Status 1: Active game, showing real-time price updates every 100ms
 - Status 2: Game completed, showing final results
-- Returns 404 Not Found for invalid UUID
-- Returns 400 Bad Request for invalid request format
+- Returns 404 Not Found if no active game exists
+- Publicly accessible - no authentication required
 
 ## Data Models
 
