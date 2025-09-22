@@ -169,7 +169,15 @@ class GameManager:
 
         except Exception as e:
             print(f"Order execution error: {e}")
+            # Use fallback winner determination when order execution fails
+            self.current_game.winner = self._determine_fallback_winner()
             self.current_game.status = GameStatus.DONE
+            self.current_game.end_time = datetime.now()
+            self.current_game.final_price = self.current_game.current_price
+            
+            # Stop price updates
+            if self._price_update_task:
+                self._price_update_task.cancel()
 
     async def _monitor_order_fills(self) -> Optional[str]:
         """Monitor order fills via Hyperliquid WebSocket"""
@@ -189,12 +197,36 @@ class GameManager:
         
         return None
 
-    def get_game_status(self, participant_uuid: str) -> Optional[Dict]:
-        """Get current game status for a participant"""
-        if not self.current_game:
-            return None
+    def _determine_fallback_winner(self) -> str:
+        """Determine winner when order execution fails - select ball closest to current price"""
+        if not self.current_game or not self.current_game.balls:
+            return ""
+        
+        current_price = self.current_game.current_price or 0.0
+        if current_price == 0.0:
+            # If no current price, randomly select from assigned balls
+            assigned_balls = [ball for ball in self.current_game.balls if ball.uuid and ball.uuid.strip()]
+            if assigned_balls:
+                import random
+                return random.choice(assigned_balls).ball_name
+            return ""
+        
+        # Find ball with target price closest to current price
+        closest_ball = None
+        min_distance = float('inf')
+        
+        for ball in self.current_game.balls:
+            if ball.uuid and ball.uuid.strip():  # Only consider assigned balls
+                distance = abs(ball.target_price - current_price)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_ball = ball
+        
+        return closest_ball.ball_name if closest_ball else ""
 
-        if participant_uuid not in self.current_game.participants:
+    def get_game_status(self) -> Optional[Dict]:
+        """Get current game status for all participants"""
+        if not self.current_game:
             return None
 
         return {
