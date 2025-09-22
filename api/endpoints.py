@@ -19,7 +19,7 @@ class StatusRequest(BaseModel):
 
 class StatusResponse(BaseModel):
     status: int
-    realtime_price: float
+    realtime_price: list
     final_price: float
     balls: list
     winner: str

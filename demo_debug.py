@@ -50,7 +50,9 @@ def demo_debug():
                     print(f"   {json.dumps(status, indent=6)}")
                     
                     # Print summary
-                    print(f"   📊 Summary: Status={status['status']} | Price=${status['realtime_price']:.2f} | Balls={len(status['balls'])}")
+                    latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+                    price_value = latest_price.get('price', 0) if latest_price else 0
+                    print(f"   📊 Summary: Status={status['status']} | Price=${price_value:.2f} | Balls={len(status['balls'])}")
                     if status['status'] == 1:
                         print("   🎮 Game started! Orders will be executed in 30 seconds...")
                     elif status['status'] == 2:
@@ -78,7 +80,9 @@ def demo_debug():
                 response = requests.get(f"{BASE_URL}/status", params={"uuid": monitor_uuid})
                 if response.status_code == 200:
                     status = response.json()
-                    print(f"\n🔄 Status {i+1:2d}: {status['status']} | Price: ${status['realtime_price']:.2f} | Balls: {len(status['balls'])}")
+                    latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+                    price_value = latest_price.get('price', 0) if latest_price else 0
+                    print(f"\n🔄 Status {i+1:2d}: {status['status']} | Price: ${price_value:.2f} | Balls: {len(status['balls'])}")
                     
                     if status['status'] == 1:
                         print("🎮 Game is in progress! Orders will be executed...")

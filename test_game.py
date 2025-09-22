@@ -113,7 +113,9 @@ def test_full_game_simulation():
             )
             if response.status_code == 200:
                 status = response.json()
-                print(f"🔄 Status {i+1}: status={status['status']}, price={status['realtime_price']:.2f}")
+                latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+                price_value = latest_price.get('price', 0) if latest_price else 0
+                print(f"🔄 Status {i+1}: status={status['status']}, price={price_value:.2f}")
                 
                 if status['status'] == 2:  # Game done
                     print(f"🏆 Game completed! Winner: {status['winner']}")

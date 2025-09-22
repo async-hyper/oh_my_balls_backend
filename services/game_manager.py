@@ -114,6 +114,11 @@ class GameManager:
 
         self.current_game.status = GameStatus.DRAWING
         self.current_game.start_time = datetime.now()
+        
+        # Initialize price history with the first price point
+        self.current_game.price_history = []
+        current_timestamp = int(self.current_game.start_time.timestamp())
+        self.current_game.price_history.append({"timestamp": current_timestamp, "price": self.current_game.initial_price})
 
         # Start price update loop
         self._price_update_task = asyncio.create_task(self._price_update_loop())
@@ -122,12 +127,16 @@ class GameManager:
         asyncio.create_task(self._schedule_order_execution())
 
     async def _price_update_loop(self):
-        """Update price every 100ms during active game"""
+        """Update price every 1s during active game and cache to price_history"""
         while self.current_game and self.current_game.status == GameStatus.DRAWING:
             try:
-                self.current_game.current_price = (
-                    await self.price_service.get_current_price()
-                )
+                current_price = await self.price_service.get_current_price()
+                self.current_game.current_price = current_price
+                
+                # Add price to history with timestamp
+                current_timestamp = int(datetime.now().timestamp())
+                self.current_game.price_history.append({"timestamp": current_timestamp, "price": current_price})
+                
                 await asyncio.sleep(1)  # 1s
             except Exception as e:
                 print(f"Price update error: {e}")
@@ -231,7 +240,7 @@ class GameManager:
             # Return empty status when no game exists
             return {
                 "status": 0,
-                "realtime_price": 0,
+                "realtime_price": [],
                 "final_price": 0,
                 "balls": [],
                 "winner": "",
@@ -245,7 +254,7 @@ class GameManager:
 
         return {
             "status": self.current_game.status,
-            "realtime_price": self.current_game.current_price or 0.0,
+            "realtime_price": self.current_game.price_history,
             "final_price": self.current_game.final_price or 0.0,
             "balls": [
                 {

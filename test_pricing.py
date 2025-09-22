@@ -62,7 +62,9 @@ def test_pricing_logic():
             status = response.json()
             print(f"\n📈 Final Game Status:")
             print(f"   Status: {status['status']} (should be 1 - drawing)")
-            print(f"   Initial Price: ${status.get('realtime_price', 0):.2f}")
+            latest_price = status.get('realtime_price', [])
+            price_value = list(latest_price[-1].values())[0] if latest_price else 0
+            print(f"   Initial Price: ${price_value:.2f}")
             print(f"   Total Balls: {len(status['balls'])}")
             
             # Sort and display balls by type and number
@@ -79,7 +81,9 @@ def test_pricing_logic():
                 game_info = game_info_response.json()
                 initial_price = game_info.get('initial_price', 0)
             
-            print(f"   Real-time Price: ${status.get('realtime_price', 0):.2f}")
+            latest_price = status.get('realtime_price', [])
+            price_value = list(latest_price[-1].values())[0] if latest_price else 0
+            print(f"   Real-time Price: ${price_value:.2f}")
             print(f"   Initial Price (for calculation): ${initial_price:.2f}")
             
             print(f"\n🟢 Long Balls (should be initial_price + 2*n):")

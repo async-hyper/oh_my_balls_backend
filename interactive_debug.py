@@ -123,7 +123,9 @@ class InteractiveGameDebugger:
         # Print summary
         print(f"\n📊 Summary:")
         print(f"   Status: {self.get_status_name(status['status'])}")
-        print(f"   Real-time Price: ${status['realtime_price']:.2f}")
+        latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+        price_value = latest_price.get('price', 0) if latest_price else 0
+        print(f"   Real-time Price: ${price_value:.2f}")
         print(f"   Final Price: ${status['final_price']:.2f}")
         print(f"   Assigned Balls: {len(status['balls'])}")
         print(f"   Winner: {status['winner'] or 'Not determined'}")
@@ -172,7 +174,9 @@ class InteractiveGameDebugger:
                         self.print_separator("🏆 LOTTERY DRAW COMPLETED!", "🎉")
                         print(f"🎊 Winner: {status['winner']}")
                         print(f"💰 Final Price: ${status['final_price']:.2f}")
-                        print(f"📈 Real-time Price: ${status['realtime_price']:.2f}")
+                        latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+                        price_value = latest_price.get('price', 0) if latest_price else 0
+                        print(f"📈 Real-time Price: ${price_value:.2f}")
                         
                         # Find winner details
                         winner_ball = status['winner']
@@ -190,7 +194,9 @@ class InteractiveGameDebugger:
                         self.monitoring = False
                         break
                     else:
-                        print(f"\n📊 Summary: Status={self.get_status_name(status['status'])}, Price=${status['realtime_price']:.2f}")
+                        latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
+                        price_value = latest_price.get('price', 0) if latest_price else 0
+                        print(f"\n📊 Summary: Status={self.get_status_name(status['status'])}, Price=${price_value:.2f}")
                         if status['status'] == 1:
                             print("⏱️  Waiting for lottery draw...")
                 
