@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import websockets
 from async_hyper import AsyncHyper
+from async_hyper.utils.types import LimitOrder
 
 from models.ball import BallAssignment, BallType
 
@@ -66,6 +67,7 @@ class OrderExecutor:
             "sz": sz,
             "px": ball.target_price,
             "is_market": False,
+            "order_type": LimitOrder.ALO.value,
         }
         oid = "0"
         try:
