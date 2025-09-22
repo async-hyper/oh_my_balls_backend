@@ -10,7 +10,8 @@ from models.ball import BallAssignment, BallType
 
 
 def parse_order_info(resp: dict) -> str:
-    return resp["response"]["data"]["statuses"][0]["resting"]
+    return str(resp["response"]["data"]["statuses"][0]["resting"]["oid"])
+    
 
 
 class OrderExecutor:
@@ -27,7 +28,13 @@ class OrderExecutor:
         """
         order_ids = []
 
-        mark_px = await self.async_hyper.get_market_price(self.coin)
+        try:
+            print(f"🌐 [NETWORK] Getting market price for {self.coin}...")
+            mark_px = await self.async_hyper.get_market_price(self.coin)
+            print(f"✅ [NETWORK] Market price retrieved: {mark_px}")
+        except Exception as e:
+            print(f"❌ [NETWORK] Failed to get market price: {type(e).__name__}: {e}")
+            raise
 
         tasks = []
         for ball in balls:
@@ -36,7 +43,7 @@ class OrderExecutor:
                 BallType.LONG if ball_name.startswith("B") else BallType.SHORT
             )
 
-            offset = int(ball_name[-1:]) + 1
+            offset = (int(ball_name[-1:]) + 1) * 1
             if ball.position == BallType.LONG:
                 ball.target_price = mark_px - offset
             else:
@@ -49,7 +56,7 @@ class OrderExecutor:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
-            if isinstance(result, str):
+            if result:  # 确保不为空
                 order_ids.append(result)
             else:
                 print(f"Order placement failed: {result}")
@@ -69,12 +76,21 @@ class OrderExecutor:
             "is_market": False,
             "order_type": LimitOrder.ALO.value,
         }
-        oid = "0"
+        oid = ""
         try:
+            print(f"🌐 [NETWORK] Placing order for {ball.ball_name}...")
             resp = await self.async_hyper.place_order(**payload)
+            print(f"✅ [NETWORK] Order placed successfully for {ball.ball_name}")
             oid = parse_order_info(resp)
         except Exception as e:
-            print(f"Order placement failed: {e}")
+            print(f"❌ [NETWORK] Order placement failed for {ball.ball_name}: {type(e).__name__}: {e}")
+            # 如果异常包含order ID信息，尝试提取
+            if isinstance(e, dict) and 'oid' in e:
+                oid = str(e['oid'])
+                print(f"🔄 [NETWORK] Extracted order ID from exception: {oid}")
+            else:
+                oid = ""  # 真正的失败，返回空字符串
+                print(f"❌ [NETWORK] No order ID found in exception")
 
         ball.order_id = oid
 
@@ -102,28 +118,58 @@ class OrderExecutor:
         filled_oid = None
         # WS_URL = "wss://api.hyperliquid.xyz/ws"
         WS_URL = "wss://api.hyperliquid-testnet.xyz/ws"
-        async with websockets.connect(WS_URL) as ws:
-            sub_msg = {
-                "method": "subscribe",
-                "subscription": {
-                    "type": "order_fills",
-                    "user": self.async_hyper.address,
-                },
-            }
-            await ws.send(json.dumps(sub_msg))
-            while True:
-                ws_msg = await ws.recv()
-                print(f"WebSocket message: {ws_msg}")
+        
+        try:
+            print(f"🌐 [NETWORK] Connecting to WebSocket: {WS_URL}")
+            print(f"📋 [NETWORK] Monitoring {len(order_ids)} orders: {order_ids}")
+            async with websockets.connect(WS_URL) as ws:
+                print(f"✅ [NETWORK] WebSocket connected successfully")
+                sub_msg = {
+                    "method": "subscribe",
+                    "subscription": {
+                        "type": "order_fills",
+                        "user": self.async_hyper.address,
+                    },
+                }
+                print(f"📤 [NETWORK] Sending subscription message: {sub_msg}")
+                await ws.send(json.dumps(sub_msg))
+                print(f"✅ [NETWORK] Subscription message sent")
+                
+                message_count = 0
+                while True:
+                    try:
+                        print(f"⏳ [NETWORK] Waiting for WebSocket message #{message_count + 1}...")
+                        ws_msg = await ws.recv()
+                        message_count += 1
+                        print(f"📨 [NETWORK] WebSocket message #{message_count}: {ws_msg}")
 
-                msg = json.loads(ws_msg)
-                channel = msg["channel"]
-                data = msg["data"]
-                if data.get("isSnapshot"):
-                    continue
-                if channel == "order_fills":
-                    oid = data["fills"][0]["oid"]
-                    filled_oid = oid
-                    print(f"Order filled: {oid}")
-                    break
+                        msg = json.loads(ws_msg)
+                        channel = msg.get("channel", "unknown")
+                        data = msg.get("data", {})
+                        
+                        print(f"📊 [NETWORK] Channel: {channel}, Data keys: {list(data.keys())}")
+                        
+                        if data.get("isSnapshot"):
+                            print(f"📸 [NETWORK] Snapshot message, skipping...")
+                            continue
+                        if channel == "order_fills":
+                            fills = data.get("fills", [])
+                            if fills:
+                                oid = str(fills[0]["oid"])  # 确保是字符串格式
+                                filled_oid = oid
+                                print(f"🎉 [NETWORK] Order filled: {oid}")
+                                break
+                            else:
+                                print(f"⚠️ [NETWORK] Order fills message but no fills data")
+                        else:
+                            print(f"ℹ️ [NETWORK] Other channel message: {channel}")
+                    except Exception as e:
+                        print(f"❌ [NETWORK] Error processing WebSocket message: {type(e).__name__}: {e}")
+                        break
+                        
+        except Exception as e:
+            print(f"❌ [NETWORK] WebSocket connection failed: {type(e).__name__}: {e}")
+            print(f"🔍 [NETWORK] Error details: {str(e)}")
+            return None
 
         return filled_oid

@@ -192,12 +192,16 @@ class GameManager:
 
         try:
             # Ensure async components are initialized
+            print(f"🔧 [GAME] Initializing async components...")
             await self._ensure_async_components()
+            print(f"✅ [GAME] Async components initialized")
             
             # Place all orders using async-hyperliquid
+            print(f"🚀 [GAME] Starting order placement for {len(self.current_game.balls)} balls...")
             placed_orders = await self.order_executor.place_orders(
                 self.current_game.balls
             )
+            print(f"📊 [GAME] Order placement completed. Placed orders: {len(placed_orders)}")
             self.current_game.placed_orders = placed_orders
 
             # Check if any orders were successfully placed
@@ -215,7 +219,9 @@ class GameManager:
                     self._price_update_task = None
             else:
                 # Monitor for first fill
+                print(f"👀 [GAME] Starting order monitoring for {len(placed_orders)} placed orders...")
                 winner_ball = await self._monitor_order_fills()
+                print(f"🏆 [GAME] Order monitoring completed. Winner: {winner_ball}")
 
                 if winner_ball:
                     self.current_game.winner = winner_ball
@@ -241,8 +247,10 @@ class GameManager:
                         self._price_update_task = None
 
         except Exception as e:
-            print(f"Order execution error: {e}")
+            print(f"❌ [GAME] Order execution error: {type(e).__name__}: {e}")
+            print(f"🔍 [GAME] Error details: {str(e)}")
             # Use fallback winner determination when order execution fails
+            print(f"🔄 [GAME] Using fallback winner determination...")
             self.current_game.winner = self._determine_fallback_winner()
             self.current_game.status = GameStatus.DONE
             self.current_game.end_time = datetime.now()
