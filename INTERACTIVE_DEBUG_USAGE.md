@@ -2,35 +2,35 @@
 
 ## 🎮 BTC Price Prediction Game - Interactive Debugger
 
-这个脚本提供了完整的交互式调试功能，让您可以手动控制游戏流程并实时观察所有状态变化。
+This script provides complete interactive debugging functionality, allowing you to manually control the game flow and observe all state changes in real-time.
 
-## 🚀 启动方式
+## 🚀 Startup
 
-1. **启动服务器**：
+1. **Start Server**:
    ```bash
    source venv/bin/activate
    python main.py
    ```
 
-2. **启动调试脚本**：
+2. **Start Debug Script**:
    ```bash
    python interactive_debug.py
    ```
 
-## ✨ 功能特点
+## ✨ Features
 
-### 🔄 自动初始化
-- 每次启动时自动重置所有游戏数据
-- 清空参与者列表和游戏状态
-- 验证服务器连接状态
+### 🔄 Auto Initialization
+- Automatically reset all game data on startup
+- Clear participant list and game state
+- Verify server connection status
 
-### 📝 手动参与者输入
-- 逐个输入UUID添加参与者
-- 每次输入后立即显示完整的status JSON
-- 实时显示参与者数量 (x/20)
+### 📝 Manual Participant Input
+- Add participants one by one by entering UUIDs
+- Display complete status JSON immediately after each input
+- Real-time display of participant count (x/20)
 
-### 📊 完整状态显示
-每次操作后都会显示：
+### 📊 Complete Status Display
+After each operation, the following will be displayed:
 ```json
 {
   "status": 0,
@@ -41,38 +41,38 @@
 }
 ```
 
-### 🔍 自动监控模式
-- 达到20个参与者时自动启动监控
-- 每2秒打印一次完整的status JSON
-- 实时跟踪游戏进度和价格变化
+### 🔍 Auto Monitoring Mode
+- Automatically start monitoring when 20 participants are reached
+- Print complete status JSON every 2 seconds
+- Real-time tracking of game progress and price changes
 
-### 🏆 自动开奖检测
-- 自动检测游戏完成状态
-- 显示获胜者信息和最终价格
-- 展示获胜参与者的详细信息
+### 🏆 Auto Draw Detection
+- Automatically detect game completion status
+- Display winner information and final price
+- Show detailed information of winning participants
 
-## 📋 可用命令
+## 📋 Available Commands
 
-### 基本操作
-- **输入UUID**: 直接输入UUID来添加参与者
-- **quit**: 退出程序
-- **status <uuid>**: 手动查询特定参与者的状态
+### Basic Operations
+- **Enter UUID**: Directly enter UUID to add participants
+- **quit**: Exit program
+- **status <uuid>**: Manually query specific participant status
 
-### 示例会话
+### Example Session
 ```
 🎯 Enter UUID (participants: 0/20): player-001
 ✅ player-001 joined successfully! Assigned ball: B3
-[显示完整JSON状态]
+[Display complete JSON status]
 
 🎯 Enter UUID (participants: 1/20): player-002
 ✅ player-002 joined successfully! Assigned ball: S7
-[显示完整JSON状态]
+[Display complete JSON status]
 
-... (继续到20个参与者)
+... (continue to 20 participants)
 
 🎉 Game started with 20 participants!
 🚀 Starting auto-monitoring mode...
-[每2秒自动显示状态直到开奖]
+[Auto display status every 2 seconds until draw]
 
 🏆 LOTTERY DRAW COMPLETED!
 🎊 Winner: B3
@@ -82,56 +82,56 @@
    Ball: B3
 ```
 
-## 🎯 游戏流程观察
+## 🎯 Game Flow Observation
 
-### 准备阶段 (Status 0)
-- 参与者逐个加入
-- 球号码分配但价格为0
-- 显示已分配的球数量
+### Preparation Phase (Status 0)
+- Participants join one by one
+- Ball numbers assigned but prices are 0
+- Display number of assigned balls
 
-### 游戏阶段 (Status 1)  
-- 第20个参与者加入后自动开始
-- 根据初始BTC价格计算所有球的目标价格
-- 实时价格开始更新
-- 自动监控模式启动
+### Game Phase (Status 1)  
+- Automatically starts after 20th participant joins
+- Calculate target prices for all balls based on initial BTC price
+- Real-time price updates begin
+- Auto monitoring mode starts
 
-### 完成阶段 (Status 2)
-- 自动检测开奖完成
-- 显示获胜球和获胜者信息
-- 展示最终价格
+### Completion Phase (Status 2)
+- Automatically detect draw completion
+- Display winning ball and winner information
+- Show final price
 
-## 🛠️ 调试特性
+## 🛠️ Debug Features
 
-### 错误处理
-- 服务器连接检查
-- 重复UUID检测  
-- 游戏满员提示
-- 网络错误恢复
+### Error Handling
+- Server connection check
+- Duplicate UUID detection  
+- Game full notification
+- Network error recovery
 
-### 实时反馈
-- 每个操作的即时状态反馈
-- 详细的错误信息
-- 清晰的进度指示器
+### Real-time Feedback
+- Immediate status feedback for each operation
+- Detailed error messages
+- Clear progress indicators
 
-### 中断处理
-- Ctrl+C 优雅退出
-- 监控模式可中断返回手动模式
-- 资源清理
+### Interrupt Handling
+- Graceful exit with Ctrl+C
+- Monitoring mode can be interrupted to return to manual mode
+- Resource cleanup
 
-## 💡 使用技巧
+## 💡 Usage Tips
 
-1. **逐步观察**: 慢慢添加参与者，观察球分配过程
-2. **状态查询**: 使用 `status <uuid>` 查看特定参与者状态
-3. **监控中断**: 在自动监控时按Ctrl+C返回手动模式
-4. **重新开始**: 重启脚本会自动重置所有数据
+1. **Step-by-step Observation**: Slowly add participants to observe ball assignment process
+2. **Status Query**: Use `status <uuid>` to view specific participant status
+3. **Monitoring Interrupt**: Press Ctrl+C during auto monitoring to return to manual mode
+4. **Restart**: Restarting the script will automatically reset all data
 
-## 🎪 演示场景
+## 🎪 Demo Scenarios
 
-这个脚本特别适合：
-- Hackathon演示准备
-- API功能验证
-- 游戏流程测试
-- 实时状态监控
-- 开奖逻辑验证
+This script is particularly suitable for:
+- Hackathon demo preparation
+- API functionality verification
+- Game flow testing
+- Real-time status monitoring
+- Draw logic verification
 
-完美展示您的async-hyperliquid库的高性能特点！
+Perfect for showcasing the high-performance features of your async-hyperliquid library!

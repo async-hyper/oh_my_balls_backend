@@ -147,13 +147,13 @@ class GameManager:
         if not self.current_game.placed_orders:
             return None
         
-        # 使用真实的订单监控
+        # Use real order monitoring
         filled_order_id = await self.order_executor.monitor_order_fills(
             self.current_game.placed_orders
         )
         
         if filled_order_id:
-            # 根据订单ID找到对应的球
+            # Find corresponding ball by order ID
             for ball in self.current_game.balls:
                 if ball.order_id == filled_order_id:
                     return ball.ball_name
