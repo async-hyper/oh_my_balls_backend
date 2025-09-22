@@ -125,15 +125,19 @@ class InteractiveGameDebugger:
         print(f"   Status: {self.get_status_name(status['status'])}")
         latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
         price_value = latest_price.get('price', 0) if latest_price else 0
-        print(f"   Real-time Price: ${price_value:.2f}")
-        print(f"   Final Price: ${status['final_price']:.2f}")
-        print(f"   Assigned Balls: {len(status['balls'])}")
-        print(f"   Winner: {status['winner'] or 'Not determined'}")
         
         if status['status'] == 1:
+            print(f"   Real-time Price: ${price_value:.2f}")
             print("   🎮 Game is in progress!")
         elif status['status'] == 2:
+            print(f"   Last Price Entry: ${price_value:.2f}")
+            print(f"   Final Price: ${status['final_price']:.2f}")
             print("   🏆 Game completed!")
+        else:
+            print(f"   Current Price: ${price_value:.2f}")
+        
+        print(f"   Assigned Balls: {len(status['balls'])}")
+        print(f"   Winner: {status['winner'] or 'Not determined'}")
     
     def get_status_name(self, status_code):
         """Convert status code to readable name"""
@@ -176,7 +180,7 @@ class InteractiveGameDebugger:
                         print(f"💰 Final Price: ${status['final_price']:.2f}")
                         latest_price = status['realtime_price'][-1] if status['realtime_price'] else {}
                         price_value = latest_price.get('price', 0) if latest_price else 0
-                        print(f"📈 Real-time Price: ${price_value:.2f}")
+                        print(f"📈 Last Price Entry: ${price_value:.2f}")
                         
                         # Find winner details
                         winner_ball = status['winner']
@@ -239,6 +243,7 @@ class InteractiveGameDebugger:
         print("   • Enter UUID to add participant")
         print("   • Type 'quit' to exit")
         print("   • Type 'status <uuid>' to check specific status")
+        print("   • Type 'start' to force start game (if 20 participants)")
         print("   • Game will auto-monitor after 20 participants")
         
         while True:
@@ -265,6 +270,25 @@ class InteractiveGameDebugger:
                         print("❌ Please provide a UUID")
                     continue
                     
+                elif command.lower() == 'start':
+                    print("🚀 Attempting to force start game...")
+                    try:
+                        response = requests.get(f"{BASE_URL}/start")
+                        if response.status_code == 200:
+                            result = response.json()
+                            print("✅ Force start successful!")
+                            print(f"📊 Result: {json.dumps(result, indent=2)}")
+                            
+                            # Start monitoring if game started
+                            if result.get('status') == 1 and self.participants:
+                                print("🚀 Starting auto-monitoring mode...")
+                                self.start_auto_monitoring(self.participants[0]['uuid'])
+                        else:
+                            print(f"❌ Force start failed: {response.status_code} - {response.text}")
+                    except Exception as e:
+                        print(f"❌ Force start error: {e}")
+                    continue
+                    
                 elif not command:
                     continue
                 
@@ -272,10 +296,42 @@ class InteractiveGameDebugger:
                 status = self.join_participant(command)
                 
                 # Check if we reached 20 participants and game started
-                if status and len(self.participants) >= 20 and status['status'] == 1:
-                    print(f"\n🎉 Game started with 20 participants!")
-                    print("🚀 Starting auto-monitoring mode...")
-                    self.start_auto_monitoring(self.participants[0]['uuid'])
+                if status and len(self.participants) >= 20:
+                    print(f"\n📊 Checking game status after 20 participants...")
+                    print(f"   Current status: {status['status']}")
+                    print(f"   Price history entries: {len(status['realtime_price'])}")
+                    
+                    if status['status'] == 1:
+                        print(f"\n🎉 Game started with 20 participants!")
+                        print("🚀 Starting auto-monitoring mode...")
+                        self.start_auto_monitoring(self.participants[0]['uuid'])
+                    elif status['status'] == 0:
+                        print(f"\n⚠️  Game has 20 participants but status is still 0")
+                        print("   This might indicate an issue with game startup")
+                        print("   Let's wait a moment and check again...")
+                        
+                        # Wait and check status again
+                        import time
+                        time.sleep(2)
+                        
+                        retry_response = requests.get(f"{BASE_URL}/status", params={"uuid": command})
+                        if retry_response.status_code == 200:
+                            retry_status = retry_response.json()
+                            print(f"   📊 Retry status: {retry_status['status']}")
+                            print(f"   📊 Price history: {len(retry_status['realtime_price'])}")
+                            
+                            if retry_status['status'] == 1:
+                                print(f"   ✅ Game started after delay!")
+                                print("🚀 Starting auto-monitoring mode...")
+                                self.start_auto_monitoring(self.participants[0]['uuid'])
+                            else:
+                                print(f"   ❌ Game still not started - there may be an issue")
+                                print(f"   💡 Try using the force start endpoint: GET /api/v1/start")
+                        else:
+                            print(f"   ❌ Retry status check failed: {retry_response.status_code}")
+                    else:
+                        print(f"   🏆 Game completed! Status: {status['status']}")
+                        print(f"   Winner: {status.get('winner', 'Not determined')}")
                 
             except KeyboardInterrupt:
                 if self.monitoring:

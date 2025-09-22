@@ -129,18 +129,47 @@ class GameManager:
     async def _price_update_loop(self):
         """Update price every 1s during active game and cache to price_history"""
         while self.current_game and self.current_game.status == GameStatus.DRAWING:
+            # Check if game is still in DRAWING status before proceeding
+            if not self.current_game or self.current_game.status != GameStatus.DRAWING:
+                print("Game status changed to DONE - stopping price updates")
+                break
+                
+            current_timestamp = int(datetime.now().timestamp())
+            
             try:
                 current_price = await self.price_service.get_current_price()
                 self.current_game.current_price = current_price
                 
                 # Add price to history with timestamp
-                current_timestamp = int(datetime.now().timestamp())
                 self.current_game.price_history.append({"timestamp": current_timestamp, "price": current_price})
                 
-                await asyncio.sleep(1)  # 1s
             except Exception as e:
                 print(f"Price update error: {e}")
-                await asyncio.sleep(1)
+                
+                # Use previous price as fallback to avoid skipping timestamps
+                fallback_price = self._get_fallback_price()
+                if fallback_price is not None:
+                    self.current_game.current_price = fallback_price
+                    self.current_game.price_history.append({"timestamp": current_timestamp, "price": fallback_price})
+                    print(f"Using fallback price: {fallback_price}")
+                else:
+                    print("No fallback price available - skipping this timestamp")
+            
+            await asyncio.sleep(1)  # 1s
+        
+        print("Price update loop stopped - game completed")
+
+    def _get_fallback_price(self) -> Optional[float]:
+        """
+        Get the last known price from price history as fallback
+        Returns None if no previous price is available
+        """
+        if not self.current_game or not self.current_game.price_history:
+            return None
+        
+        # Get the last price entry from history
+        last_entry = self.current_game.price_history[-1]
+        return last_entry.get('price', None)
 
     async def _schedule_order_execution(self):
         """Schedule order execution after 30 seconds"""
@@ -176,6 +205,7 @@ class GameManager:
                 # Stop price updates
                 if self._price_update_task:
                     self._price_update_task.cancel()
+                    self._price_update_task = None
 
         except Exception as e:
             print(f"Order execution error: {e}")
@@ -188,6 +218,7 @@ class GameManager:
             # Stop price updates
             if self._price_update_task:
                 self._price_update_task.cancel()
+                self._price_update_task = None
 
     async def _monitor_order_fills(self) -> Optional[str]:
         """Monitor order fills via Hyperliquid WebSocket"""
