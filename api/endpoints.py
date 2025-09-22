@@ -53,14 +53,8 @@ async def get_game_status():
     """
     try:
         status_data = game_manager.get_game_status()
-        
-        if status_data is None:
-            raise HTTPException(status_code=404, detail="No active game")
-        
         return StatusResponse(**status_data)
     
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
 

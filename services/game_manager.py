@@ -224,10 +224,17 @@ class GameManager:
         
         return closest_ball.ball_name if closest_ball else ""
 
-    def get_game_status(self) -> Optional[Dict]:
+    def get_game_status(self) -> Dict:
         """Get current game status for all participants"""
         if not self.current_game:
-            return None
+            # Return empty status when no game exists
+            return {
+                "status": 0,
+                "realtime_price": 0,
+                "final_price": 0,
+                "balls": [],
+                "winner": ""
+            }
 
         return {
             "status": self.current_game.status,
