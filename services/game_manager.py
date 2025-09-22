@@ -117,8 +117,12 @@ class GameManager:
         
         # Initialize price history with the first price point
         self.current_game.price_history = []
-        current_timestamp = int(self.current_game.start_time.timestamp())
-        self.current_game.price_history.append({"timestamp": current_timestamp, "price": self.current_game.initial_price})
+        self.current_game.price_counter = 0
+        
+        # Add first price entry with timestamp = start_time + counter (0)
+        first_timestamp = int(self.current_game.start_time.timestamp())
+        self.current_game.price_history.append({"timestamp": first_timestamp, "price": self.current_game.initial_price})
+        self.current_game.price_counter = 1  # Increment counter for next entry
 
         # Start price update loop
         self._price_update_task = asyncio.create_task(self._price_update_loop())
@@ -134,14 +138,16 @@ class GameManager:
                 print("Game status changed to DONE - stopping price updates")
                 break
                 
-            current_timestamp = int(datetime.now().timestamp())
+            # Generate unique timestamp using start_time + counter
+            current_timestamp = int(self.current_game.start_time.timestamp()) + self.current_game.price_counter
             
             try:
                 current_price = await self.price_service.get_current_price()
                 self.current_game.current_price = current_price
                 
-                # Add price to history with timestamp
+                # Add price to history with unique timestamp
                 self.current_game.price_history.append({"timestamp": current_timestamp, "price": current_price})
+                self.current_game.price_counter += 1
                 
             except Exception as e:
                 print(f"Price update error: {e}")
@@ -151,6 +157,7 @@ class GameManager:
                 if fallback_price is not None:
                     self.current_game.current_price = fallback_price
                     self.current_game.price_history.append({"timestamp": current_timestamp, "price": fallback_price})
+                    self.current_game.price_counter += 1
                     print(f"Using fallback price: {fallback_price}")
                 else:
                     print("No fallback price available - skipping this timestamp")
@@ -193,19 +200,45 @@ class GameManager:
             )
             self.current_game.placed_orders = placed_orders
 
-            # Monitor for first fill
-            winner_ball = await self._monitor_order_fills()
-
-            if winner_ball:
-                self.current_game.winner = winner_ball
+            # Check if any orders were successfully placed
+            if not placed_orders:
+                print("No orders were successfully placed - using fallback winner determination")
+                # Use fallback winner determination when no orders were placed
+                self.current_game.winner = self._determine_fallback_winner()
                 self.current_game.status = GameStatus.DONE
                 self.current_game.end_time = datetime.now()
                 self.current_game.final_price = self.current_game.current_price
-
+                
                 # Stop price updates
                 if self._price_update_task:
                     self._price_update_task.cancel()
                     self._price_update_task = None
+            else:
+                # Monitor for first fill
+                winner_ball = await self._monitor_order_fills()
+
+                if winner_ball:
+                    self.current_game.winner = winner_ball
+                    self.current_game.status = GameStatus.DONE
+                    self.current_game.end_time = datetime.now()
+                    self.current_game.final_price = self.current_game.current_price
+
+                    # Stop price updates
+                    if self._price_update_task:
+                        self._price_update_task.cancel()
+                        self._price_update_task = None
+                else:
+                    print("No orders were filled - using fallback winner determination")
+                    # Use fallback winner determination when no orders were filled
+                    self.current_game.winner = self._determine_fallback_winner()
+                    self.current_game.status = GameStatus.DONE
+                    self.current_game.end_time = datetime.now()
+                    self.current_game.final_price = self.current_game.current_price
+                    
+                    # Stop price updates
+                    if self._price_update_task:
+                        self._price_update_task.cancel()
+                        self._price_update_task = None
 
         except Exception as e:
             print(f"Order execution error: {e}")

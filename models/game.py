@@ -23,6 +23,7 @@ class GameState(BaseModel):
     filled_order: Optional[str] = None  # Order ID of the first filled order
     hyperliquid_ws_connected: bool = False
     price_history: List[Dict[str, float]] = []  # List of {timestamp: timestamp, price: price} objects
+    price_counter: int = 0  # Sequential counter for unique timestamps
 
     class Config:
         use_enum_values = True
