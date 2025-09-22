@@ -38,8 +38,6 @@ async def join_game(request: JoinRequest):
     except ValueError as e:
         if "Game is full" in str(e):
             raise HTTPException(status_code=409, detail="Game is full")
-        elif "already joined" in str(e):
-            raise HTTPException(status_code=409, detail="Participant already joined")
         else:
             raise HTTPException(status_code=400, detail=str(e))
     

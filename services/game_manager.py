@@ -69,11 +69,12 @@ class GameManager:
         if self.current_game.status != GameStatus.PREPARING:
             raise ValueError("Game is not in preparing state")
 
+        # Check if participant already joined - return their existing ball
+        if participant_uuid in self.current_game.participants:
+            return self.current_game.participants[participant_uuid]
+
         if len(self.current_game.participants) >= 20:
             raise ValueError("Game is full")
-
-        if participant_uuid in self.current_game.participants:
-            raise ValueError("Participant already joined")
 
         # Generate ball assignments without prices if not done yet
         if not self.current_game.balls:
