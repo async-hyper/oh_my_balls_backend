@@ -85,10 +85,10 @@ class GameManager:
         while self.current_game and self.current_game.status == GameStatus.DRAWING:
             try:
                 self.current_game.current_price = await self.price_service.get_current_price()
-                await asyncio.sleep(0.1)  # 100ms
+                await asyncio.sleep(1)  # 1s
             except Exception as e:
                 print(f"Price update error: {e}")
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(1)
     
     async def _schedule_order_execution(self):
         """Schedule order execution after 30 seconds"""
