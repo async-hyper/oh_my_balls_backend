@@ -165,6 +165,50 @@ class GameManager:
         """Get current game state"""
         return self.current_game
     
+    async def force_start_game(self) -> Dict:
+        """Force start game by auto-generating missing participants"""
+        if not self.current_game:
+            await self.create_new_game()
+        
+        if self.current_game.status != GameStatus.PREPARING:
+            raise ValueError("Game is not in preparing state")
+        
+        current_participants = len(self.current_game.participants)
+        missing_participants = 20 - current_participants
+        
+        if missing_participants <= 0:
+            raise ValueError("Game already has 20 participants")
+        
+        # Generate ball assignments without prices if not done yet
+        if not self.current_game.balls:
+            self.current_game.balls = self.ball_calculator.generate_empty_ball_assignments()
+        
+        # Auto-generate missing participants
+        auto_generated = []
+        for i in range(missing_participants):
+            auto_uuid = f"auto-participant-{i+1:02d}"
+            
+            # Find next available ball
+            available_balls = [ball for ball in self.current_game.balls if not ball.uuid]
+            if available_balls:
+                assigned_ball = available_balls[0]
+                assigned_ball.uuid = auto_uuid
+                self.current_game.participants[auto_uuid] = assigned_ball.ball_name
+                auto_generated.append({
+                    "uuid": auto_uuid,
+                    "ball": assigned_ball.ball_name
+                })
+        
+        # Start the game
+        await self.start_game()
+        
+        return {
+            "message": f"Game started with {missing_participants} auto-generated participants",
+            "auto_generated": auto_generated,
+            "total_participants": len(self.current_game.participants),
+            "status": self.current_game.status
+        }
+    
     def reset_game(self):
         """Reset game state for testing"""
         self.current_game = None

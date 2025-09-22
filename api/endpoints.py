@@ -81,6 +81,21 @@ async def get_game_info():
         "current_price": current_game.current_price
     }
 
+@router.post("/start")
+async def start_game():
+    """
+    Force start game by auto-generating missing participants
+    """
+    try:
+        result = await game_manager.force_start_game()
+        return result
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.post("/game/reset")
 async def reset_game():
     """
