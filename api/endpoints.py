@@ -30,6 +30,8 @@ async def join_game(request: JoinRequest):
     Register a participant and receive a ball assignment
     """
     try:
+        # Ensure async components are initialized
+        await game_manager._ensure_async_components()
         ball_name = await game_manager.join_game(request.uuid)
         return JoinResponse(ball=ball_name)
     
@@ -87,6 +89,8 @@ async def start_game():
     Force start game by auto-generating missing participants
     """
     try:
+        # Ensure async components are initialized
+        await game_manager._ensure_async_components()
         result = await game_manager.force_start_game()
         return result
     

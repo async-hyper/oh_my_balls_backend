@@ -23,14 +23,37 @@ class GameManager:
         self.current_game: Optional[GameState] = None
         self.ball_calculator = BallCalculator()
 
-        address = os.getenv("HL_ADDR", "")
-        pk = os.getenv("HL_PK", "")
-        is_mainnet = os.getenv("IS_MAINNET", "true").lower() == "true"
-        async_hyper = AsyncHyper(address, pk, is_mainnet)
-
-        self.price_service = PriceService(async_hyper)
-        self.order_executor = OrderExecutor(async_hyper)
+        # Store configuration for lazy initialization of async components
+        self.address = os.getenv("HL_ADDR", "")
+        self.pk = os.getenv("HL_PK", "")
+        self.is_mainnet = os.getenv("IS_MAINNET", "true").lower() == "true"
+        
+        # Async components will be initialized when needed
+        self._async_hyper: Optional[AsyncHyper] = None
+        self._price_service: Optional[PriceService] = None
+        self._order_executor: Optional[OrderExecutor] = None
         self._price_update_task: Optional[asyncio.Task] = None
+
+    async def _ensure_async_components(self):
+        """Ensure async components are initialized"""
+        if self._async_hyper is None:
+            self._async_hyper = AsyncHyper(self.address, self.pk, self.is_mainnet)
+            self._price_service = PriceService(self._async_hyper)
+            self._order_executor = OrderExecutor(self._async_hyper)
+
+    @property
+    def price_service(self):
+        """Get price service, raise error if not initialized"""
+        if self._price_service is None:
+            raise RuntimeError("Price service not initialized. Call _ensure_async_components() first.")
+        return self._price_service
+
+    @property
+    def order_executor(self):
+        """Get order executor, raise error if not initialized"""
+        if self._order_executor is None:
+            raise RuntimeError("Order executor not initialized. Call _ensure_async_components() first.")
+        return self._order_executor
 
     async def create_new_game(self) -> str:
         """Create a new game instance"""
@@ -79,6 +102,9 @@ class GameManager:
         if not self.current_game or self.current_game.status != GameStatus.PREPARING:
             raise ValueError("Game not ready to start")
 
+        # Ensure async components are initialized
+        await self._ensure_async_components()
+
         # Get current BTC price and calculate ball prices
         self.current_game.initial_price = await self.price_service.get_current_price()
         self.ball_calculator.calculate_ball_prices(
@@ -119,6 +145,9 @@ class GameManager:
             return
 
         try:
+            # Ensure async components are initialized
+            await self._ensure_async_components()
+            
             # Place all orders using async-hyperliquid
             placed_orders = await self.order_executor.place_orders(
                 self.current_game.balls
