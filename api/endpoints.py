@@ -23,6 +23,8 @@ class StatusResponse(BaseModel):
     final_price: float
     balls: list
     winner: str
+    p0: float
+    t0: int
 
 @router.post("/join", response_model=JoinResponse)
 async def join_game(request: JoinRequest):

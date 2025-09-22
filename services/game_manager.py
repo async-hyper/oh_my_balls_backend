@@ -234,8 +234,14 @@ class GameManager:
                 "realtime_price": 0,
                 "final_price": 0,
                 "balls": [],
-                "winner": ""
+                "winner": "",
+                "p0": 0.0,
+                "t0": 0
             }
+
+        # Calculate p0 (initial price when game started drawing) and t0 (start time as unix timestamp)
+        p0 = self.current_game.initial_price or 0.0
+        t0 = int(self.current_game.start_time.timestamp()) if self.current_game.start_time else 0
 
         return {
             "status": self.current_game.status,
@@ -251,6 +257,8 @@ class GameManager:
                 if ball.uuid and ball.uuid.strip()  # Only show assigned balls
             ],
             "winner": self.current_game.winner or "",
+            "p0": p0,
+            "t0": t0
         }
 
     def get_current_game(self) -> Optional[GameState]:
